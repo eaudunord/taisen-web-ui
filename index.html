@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DreamPi Link Cable Controller</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: #333; margin-bottom: 5px; }
+        .header p { color: #666; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        select, input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; }
+        select:focus, input:focus { border-color: #007bff; outline: none; }
+        .btn { padding: 12px 24px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin: 5px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-running { background: #155724; color: white;}
+        .btn:hover { opacity: 0.9; }
+        .status { padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .status-ready { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .status-running { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .status-error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .command { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; margin: 15px 0; border-radius: 5px; font-family: monospace; font-size: 14px; }
+        .logs { background: #343a40; color: #fff; padding: 15px; margin: 15px 0; border-radius: 5px; font-family: monospace; font-size: 13px; max-height: 200px; overflow-y: auto; }
+        .hidden { display: none; }
+        .refresh-btn { margin-top: 10px; padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 3px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DreamPi Link Cable</h1>
+            <p>Taisen Netplay Controller</p>
+        </div>
+        
+        <div class="form-group">
+            <label for="com_port">COM Port:</label>
+            <select id="com_port">
+                <option value="">Detecting ports...</option>
+            </select>
+            <button class="refresh-btn" onclick="refreshPorts()">🔄 Refresh Ports</button>
+            <button class="refresh-btn" onClick="statusDreampi()">🔄 Dreampi Status</button>
+            <button class="refresh-btn" onClick="fetchUpdates()">🔄 Check for updates</button>
+        </div>
+
+        <div class="form-group">
+            <label for="ftdi">FTDI Latency</label>
+            <select id="ftdi">
+                <option value="">Default</option>
+                <option value="1">1 ms</option>
+                <option value="2">2 ms</option>
+                <option value="3">3 ms</option>
+                <option value="4">4 ms</option>
+                <option value="5">5 ms</option>
+                <option value="6">6 ms</option>
+                <option value="7">7 ms</option>
+                <option value="8">8 ms</option>
+                <option value="9">9 ms</option>
+                <option value="10">10 ms</option>
+                <option value="11">11 ms</option>
+                <option value="12">12 ms</option>
+                <option value="13">13 ms</option>
+                <option value="14">14 ms</option>
+                <option value="15">15 ms</option>
+                <option value="16">16 ms</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="game">Game:</label>
+            <select id="game">
+                <option value="">Select Game...</option>
+                <option value="1">Aero Dancing F</option>
+                <option value="2">Aero Dancing I</option>
+                <option value="3">F355 Challenge</option>
+                <option value="4">Tetris</option>
+                <option value="5">Virtual On Oratorio Tangram</option>
+                <option value="6">Hell Gate</option>
+                <option value="9">Maximum Speed</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="matching">Connection Method:</label>
+            <select id="matching" onchange="toggleFields()">
+                <option value="">Select Method...</option>
+                <option value="1">Matchmaking Server (Automatic)</option>
+                <option value="2">Direct IP Connection (Manual)</option>
+            </select>
+        </div>
+        
+        <div class="form-group hidden" id="ipGroup">
+            <label for="ip_address">Opponent IP Address:</label>
+            <input type="text" id="ip_address" placeholder="127.0.0.1">
+        </div>
+        
+        <div class="form-group hidden" id="connectionTypeGroup">
+            <label for="connection_type">Connection Type:</label>
+            <select id="connection_type">
+                <option value="">Select Type...</option>
+                <option value="1">Wait for Connection (I'll wait for opponent)</option>
+                <option value="2">Connect to Opponent (I'll initiate connection)</option>
+            </select>
+        </div>
+        
+        <div>
+            <button class="btn btn-primary" id="startBtn" onclick="startScript()">Start Link Cable</button>
+            <button class="btn btn-danger hidden" id="stopBtn" onclick="stopScript()">Stop</button>
+            <button class="btn btn-danger hidden" id="startDpiBtn" onclick="startDreampi()">Dreampi Service Stopped - Click to Start</button>
+            <button class="btn btn-running hidden" id="stopDpiBtn" onclick="stopDreampi()">Dreampi Service Running - Click to Stop</button>
+        </div>
+        
+        <div class="status status-ready" id="statusCard">
+            <div id="statusText">Ready to start - Select your settings above</div>
+        </div>
+        
+        <div id="commandDisplay" class="command hidden"></div>
+        <div class="logs hidden" id="logsContainer">
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        var isRunning = false;
+        var logInterval;
+        var dpiRunning = true;
+        
+        function toggleFields() {
+            var matching = document.getElementById('matching').value;
+            var ipGroup = document.getElementById('ipGroup');
+            var connectionTypeGroup = document.getElementById('connectionTypeGroup');
+            
+            if (matching === '2') {
+                ipGroup.classList.remove('hidden');
+                connectionTypeGroup.classList.remove('hidden');
+            } else {
+                ipGroup.classList.add('hidden');
+                connectionTypeGroup.classList.add('hidden');
+            }
+        }
+        
+        function startScript() {
+            var com_port = document.getElementById('com_port').value;
+            var game = document.getElementById('game').value;
+            var matching = document.getElementById('matching').value;
+            var ip_address = document.getElementById('ip_address').value;
+            var connection_type = document.getElementById('connection_type').value;
+            var ftdi = document.getElementById('ftdi').value;
+            
+            // Validation
+            if (!com_port || !game || !matching) {
+                alert('Please fill in all required fields:\\n\\n' +
+                      'COM Port: ' + (com_port || 'NOT SELECTED') + '\\n' +
+                      'Game: ' + (game || 'NOT SELECTED') + '\\n' +
+                      'Connection: ' + (matching || 'NOT SELECTED'));
+                return;
+            }
+            
+            if (matching === '2' && (!ip_address || !connection_type)) {
+                alert('Please enter IP address and connection type for direct connection');
+                return;
+            }
+            
+            updateStatus('Starting link cable...', 'running');
+            
+            // Build parameters
+            var params = [];
+            params.push('com_port=' + encodeURIComponent(com_port));
+            params.push('game=' + encodeURIComponent(game));
+            params.push('matching=' + encodeURIComponent(matching));
+            
+            if (matching === '2') {
+                params.push('ip_address=' + encodeURIComponent(ip_address));
+                params.push('connection_type=' + encodeURIComponent(connection_type));
+            }
+
+            if (ftdi !== "") {
+                params.push('ftdi=' + encodeURIComponent(ftdi));
+            }
+            
+            var url = '/start?' + params.join('&');
+            
+            fetch(url)
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        isRunning = true;
+                        updateUI();
+                        updateStatus('Link cable active! Check logs below for connection status.', 'running');
+                        
+                        if (result.command) {
+                            document.getElementById('commandDisplay').innerHTML = 
+                                '<strong>Executed Command:</strong><br>' + result.command;
+                            document.getElementById('commandDisplay').classList.remove('hidden');
+                        }
+                        
+                        startLogUpdates();
+                    } else {
+                        updateStatus('Error: ' + result.error, 'error');
+                    }
+                })
+                .catch(function(error) {
+                    updateStatus('Connection error: ' + error.message, 'error');
+                });
+        }
+        
+        function stopScript() {
+            fetch('/stop')
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        isRunning = false;
+                        updateUI();
+                        updateStatus('Link cable stopped', 'ready');
+                        stopLogUpdates();
+                        document.getElementById('commandDisplay').classList.add('hidden');
+                    }
+                });
+        }
+
+        function stopDreampi() {
+            fetch('/dreampi_stop')
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        dpiRunning = false;
+                        updateDPI();
+                    }
+                });
+        }
+
+        function startDreampi() {
+            fetch('/dreampi_start')
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        dpiRunning = true;
+                        updateDPI();
+                    }
+                });
+        }
+
+        function statusDreampi() {
+            fetch('/dreampi_status')
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        dpiRunning = true;
+                        updateDPI();
+                    } else {
+                        dpiRunning = false;
+                        updateDPI();
+                    }
+                });
+        }
+
+        function fetchUpdates() {
+            fetch('/fetch_updates')
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        startLogUpdates();
+                    }
+                });
+
+        }
+
+        function updateDPI() {
+            var startBtn = document.getElementById('startDpiBtn');
+            var stopBtn = document.getElementById('stopDpiBtn');
+            
+            if (dpiRunning) {
+                startBtn.classList.add('hidden');
+                stopBtn.classList.remove('hidden');
+            } else {
+                startBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+            }
+        }
+        
+        function updateUI() {
+            var startBtn = document.getElementById('startBtn');
+            var stopBtn = document.getElementById('stopBtn');
+            
+            if (isRunning) {
+                startBtn.classList.add('hidden');
+                stopBtn.classList.remove('hidden');
+            } else {
+                startBtn.classList.remove('hidden');
+                stopBtn.classList.add('hidden');
+            }
+        }
+        
+        function updateStatus(text, type) {
+            var card = document.getElementById('statusCard');
+            var textEl = document.getElementById('statusText');
+            
+            card.className = 'status status-' + type;
+            textEl.textContent = text;
+        }
+        
+        function refreshPorts() {
+            var select = document.getElementById('com_port');
+            select.innerHTML = '<option value="">Detecting ports...</option>';
+            
+            fetch('/ports')
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    select.innerHTML = '<option value="">Select COM Port...</option>';
+                    
+                    if (data.ports && data.ports.length > 0) {
+                        for (var i = 0; i < data.ports.length; i++) {
+                            var port = data.ports[i];
+                            var option = document.createElement('option');
+                            option.value = port.device;
+                            option.textContent = port.device + 
+                                (port.description ? ' (' + port.description + ')' : '');
+                            select.appendChild(option);
+                        }
+                    } else {
+                        var option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No USB serial ports found';
+                        option.disabled = true;
+                        select.appendChild(option);
+                    }
+                })
+                .catch(function(error) {
+                    select.innerHTML = '<option value="">Error detecting ports</option>';
+                });
+        }
+        
+        function startLogUpdates() {
+            document.getElementById('logsContainer').classList.remove('hidden');
+            
+            logInterval = setInterval(function() {
+                fetch('/logs')
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        var logsDiv = document.getElementById('logs');
+                        if (data.logs !== logsDiv.innerHTML) {
+                            logsDiv.innerHTML = data.logs;
+                            logsDiv.scrollTop = logsDiv.scrollHeight;
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Log update failed:', error);
+                    });
+            }, 2000);
+        }
+        
+        function stopLogUpdates() {
+            if (logInterval) {
+                clearInterval(logInterval);
+                logInterval = null;
+            }
+            document.getElementById('logsContainer').classList.add('hidden');
+        }
+        
+        // Auto-refresh ports when page loads
+        window.onload = function() {
+            refreshPorts();
+        };
+        
+    </script>
+</body>
+</html>
