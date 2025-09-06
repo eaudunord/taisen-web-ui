@@ -177,7 +177,9 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
                 
                 result = {"success": True, "message": "Dreampi service is running"}
                 self.wfile.write(json.dumps(result).encode())
+                process_output.append("Dreampi service started")
             else:
+                process_output.append("Error. Dreampi service not started")
                 raise Exception("Dreampi service not active")
 
         except Exception as e:
@@ -199,8 +201,10 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
                 
                 result = {"success": True, "message": "Dreampi service stopped"}
                 self.wfile.write(json.dumps(result).encode())
+                process_output.append("Dreampi service stopped")
             else:
-                raise Exception("Dreampi service still active")
+                process_output.append("Error. Dreampi service still active")
+                raise Exception("Error. Dreampi service still active")
 
         except Exception as e:
             self.send_response(500)
@@ -209,6 +213,7 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
             
             result = {"success": False, "error": str(e)}
             self.wfile.write(json.dumps(result).encode())
+            process_output.append("Error executing Dreampi stop command")
 
     def handle_dreampi_status(self):
         try:
@@ -351,8 +356,8 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
         global process_output
         restart_flag = False
         link_script = "https://raw.githubusercontent.com/eaudunord/dc-taisen-netplay/main/link_cable.py"
-        web_server = "https://raw.githubusercontent.com/eaudunord/dc-taisen-netplay/main/webserver.py"
-        index_html = "https://raw.githubusercontent.com/eaudunord/dc-taisen-netplay/main/index.html"
+        web_server = "https://raw.githubusercontent.com/eaudunord/taisen-web-ui/main/webserver.py"
+        index_html = "https://raw.githubusercontent.com/eaudunord/taisen-web-ui/main/index.html"
         check_scripts = [link_script, web_server, index_html]
         for script in check_scripts:
             url = script

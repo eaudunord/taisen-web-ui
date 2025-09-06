@@ -228,6 +228,7 @@
                     if (result.success) {
                         dpiRunning = false;
                         updateDPI();
+                        startLogUpdates();
                     }
                 });
         }
@@ -239,6 +240,7 @@
                     if (result.success) {
                         dpiRunning = true;
                         updateDPI();
+                        startLogUpdates();
                     }
                 });
         }
