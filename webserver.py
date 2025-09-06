@@ -350,9 +350,9 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
     def fetch_updates(self):
         global process_output
         restart_flag = False
-        link_script = "https://raw.githubusercontent.com/eaudunord/dc-taisen-netplay/refs/heads/main/link_cable.py"
-        web_server = "https://github.com/eaudunord/taisen-web-ui/raw/refs/heads/main/webserver.py"
-        index_html = "https://github.com/eaudunord/taisen-web-ui/raw/refs/heads/main/index.html"
+        link_script = "https://raw.githubusercontent.com/eaudunord/dc-taisen-netplay/main/link_cable.py"
+        web_server = "https://raw.githubusercontent.com/eaudunord/dc-taisen-netplay/main/webserver.py"
+        index_html = "https://raw.githubusercontent.com/eaudunord/dc-taisen-netplay/main/index.html"
         check_scripts = [link_script, web_server, index_html]
         for script in check_scripts:
             url = script
