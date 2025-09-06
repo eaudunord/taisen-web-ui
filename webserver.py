@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#web_server_version=2025.09.06.1356
+#web_server_version=2025.09.06.1421
 
 import sys
 import subprocess
@@ -351,9 +351,9 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
         global process_output
         restart_flag = False
         link_script = "https://raw.githubusercontent.com/eaudunord/dc-taisen-netplay/refs/heads/main/link_cable.py"
-        web_server = ""
-        index_html = ""
-        check_scripts = [link_script]
+        web_server = "https://github.com/eaudunord/taisen-web-ui/raw/refs/heads/main/webserver.py"
+        index_html = "https://github.com/eaudunord/taisen-web-ui/raw/refs/heads/main/index.html"
+        check_scripts = [link_script, web_server, index_html]
         for script in check_scripts:
             url = script
             try:
