@@ -69,8 +69,8 @@ python -c "import serial" >/dev/null 2>&1 || {
     timeout 30 python -m pip install --user pyserial >/dev/null 2>&1 || {
         print_warning "pyserial installation failed - will try alternative methods"
         # Try system package as fallback
-        timeout 30 sudo apt-get install -y python-pip >/dev/null 2>&1 || true
-        timeout 30 python -m pip install --user pyserial >/dev/null 2>&1 || {
+        timeout 30 sudo apt install -y python-pip >/dev/null 2>&1 || true
+        timeout 30 python -m pip install pyserial >/dev/null 2>&1 || {
             print_warning "pyserial still failed - you may need to install manually later"
         }
     }
@@ -79,13 +79,24 @@ python -c "import serial" >/dev/null 2>&1 || {
 # Try to install requests (quietly)
 python -c "import requests" >/dev/null 2>&1 || {
     print_status "Installing requests..."
-    timeout 30 python -m pip install --user requests >/dev/null 2>&1 || {
+    timeout 30 python -m pip install requests >/dev/null 2>&1 || {
         print_warning "requests installation failed"
     }
 }
 
+python3 -c "import requests" >/dev/null 2>&1 || {
+    print_status "Installing requests..."
+    timeout 30 python3 -m pip install requests >/dev/null 2>&1 || {
+        print_warning "requests installation failed. Trying other methods"
+        timeout 30 sudo apt install -y python3-pip >/dev/null 2>&1 || true
+        timeout 30 python3 -m pip install requests >/dev/null 2>&1 || {
+            print_warning "requests still failed - you may need to install manually later"
+        }
+    }
+}
+
 # Try to install pystun (quietly)
-python -c "import pystun3" >/dev/null 2>&1 || {
+python -c "import stun" >/dev/null 2>&1 || {
     print_status "Installing pystun3..."
     timeout 30 python -m pip install pystun3 >/dev/null 2>&1 || {
         print_warning "pystun3 installation failed"
