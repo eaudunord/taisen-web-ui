@@ -20,7 +20,6 @@ WEB_PORT=1999
 
 echo -e "${BLUE}================================${NC}"
 echo -e "${BLUE}DreamPi Link Cable Web Server${NC}"
-echo -e "${BLUE}Final Working Installer v1.0${NC}"
 echo -e "${BLUE}================================${NC}"
 echo
 
@@ -55,53 +54,54 @@ fi
 
 # Check if link_cable.py exists
 if [ ! -f "link_cable.py" ]; then
-    print_error "link_cable.py not found in current directory."
-    print_warning "Please place link_cable.py in the same directory as this installer."
-    exit 1
+    curl -O "https://raw.githubusercontent.com/eaudunord/dc-taisen-netplay/main/link_cable.py"
+fi
+
+if [ ! -f "index.html" ]; then
+    curl -O "https://raw.githubusercontent.com/eaudunord/taisen-web-ui/main/index.html"
+fi
+
+if [ ! -f "webserver.py" ]; then
+    curl -O "https://raw.githubusercontent.com/eaudunord/taisen-web-ui/main/webserver.py"
 fi
 
 # Quick dependency installation (non-blocking)
 print_status "Installing dependencies..."
 
-# Try to install pyserial (quietly, don't hang if it fails)
+python -m pip --version || {
+    sudo apt-get update
+    sudo apt-get install -y python-pip
+}
+
+python3 -m pip --version || {
+    sudo apt-get update
+    sudo apt-get install -y python3-pip
+}
+# Try to install pyserial
 python -c "import serial" >/dev/null 2>&1 || {
-    print_status "Installing pyserial..."
-    timeout 30 python -m pip install --user pyserial >/dev/null 2>&1 || {
-        print_warning "pyserial installation failed - will try alternative methods"
-        # Try system package as fallback
-        timeout 30 sudo apt install -y python-pip >/dev/null 2>&1 || true
-        timeout 30 python -m pip install pyserial >/dev/null 2>&1 || {
-            print_warning "pyserial still failed - you may need to install manually later"
-        }
-    }
-}
+        print_status "Installing pyserial..."
+        python -m pip install pyserial
+     } || print_warning "pyserial still failed - you may need to install manually later"
 
-# Try to install requests (quietly)
+# Try to install requests
+
+    # for 2.7
 python -c "import requests" >/dev/null 2>&1 || {
-    print_status "Installing requests..."
-    timeout 30 python -m pip install requests >/dev/null 2>&1 || {
-        print_warning "requests installation failed"
-    }
-}
+        print_status "Installing requests..."
+        python -m pip install requests
+     } || print_warning "requests still failed - you may need to install manually later"
 
+    # for 3.x
 python3 -c "import requests" >/dev/null 2>&1 || {
-    print_status "Installing requests..."
-    timeout 30 python3 -m pip install requests >/dev/null 2>&1 || {
-        print_warning "requests installation failed. Trying other methods"
-        timeout 30 sudo apt install -y python3-pip >/dev/null 2>&1 || true
-        timeout 30 python3 -m pip install requests >/dev/null 2>&1 || {
-            print_warning "requests still failed - you may need to install manually later"
-        }
-    }
-}
+        print_status "Installing requests..."
+        python3 -m pip install requests
+     } || print_warning "requests still failed - you may need to install manually later"
 
-# Try to install pystun (quietly)
+# Try to install pystun
 python -c "import stun" >/dev/null 2>&1 || {
-    print_status "Installing pystun3..."
-    timeout 30 python -m pip install pystun3 >/dev/null 2>&1 || {
-        print_warning "pystun3 installation failed"
-    }
-}
+        print_status "Installing pystun3..."
+        python -m pip install pystun3
+    } || print_warning "pystun3 installation failed"
 
 # Create installation directory
 print_status "Creating installation directory..."
@@ -203,31 +203,31 @@ echo -e "${GREEN}================================${NC}"
 echo -e "${GREEN}Installation Complete!${NC}"
 echo -e "${GREEN}================================${NC}"
 echo
-echo -e "${BLUE}📊 Installation Summary:${NC}"
+echo -e "${BLUE}Installation Summary:${NC}"
 echo -e "   Service Status: $SERVICE_STATUS"
 echo -e "   Dependencies: $([ "$DEPS_OK" = true ] && echo "✅ OK" || echo "⚠️  Some missing")"
 echo -e "   Auto-start: ✅ Enabled"
 echo
-echo -e "${BLUE}🌐 Web Interface:${NC}"
+echo -e "${BLUE}Web Interface:${NC}"
 echo -e "   Local:    http://localhost:$WEB_PORT"
-echo -e "   Network:  http://$IP_ADDRESS:$WEB_PORT"
+echo -e "   Network:  http://$IP_ADDRESS:$WEB_PORT or http://dreampi.local:$WEB_PORT"
 echo
-echo -e "${BLUE}🔧 Service Management:${NC}"
+echo -e "${BLUE}Service Management:${NC}"
 echo -e "   Status:   sudo systemctl status $SERVICE_NAME"
 echo -e "   Stop:     sudo systemctl stop $SERVICE_NAME"
 echo -e "   Start:    sudo systemctl start $SERVICE_NAME"
 echo -e "   Restart:  sudo systemctl restart $SERVICE_NAME"
 echo -e "   Logs:     sudo journalctl -u $SERVICE_NAME -f"
 echo
-echo -e "${BLUE}🎯 Manual Control:${NC}"
+echo -e "${BLUE}Manual Control:${NC}"
 echo -e "   Start:    $INSTALL_DIR/start.sh"
 echo -e "   Stop:     $INSTALL_DIR/stop.sh"
 echo -e "   Restart:  $INSTALL_DIR/restart.sh"
 echo
 
 if [ "$SERVICE_STATUS" = "RUNNING" ]; then
-    echo -e "${GREEN}✅ Success! The web interface is ready to use.${NC}"
-    echo -e "${GREEN}🎮 Connect your Dreamcast coders cable and enjoy netplay!${NC}"
+    echo -e "${GREEN}Success! The web interface is ready to use.${NC}"
+    echo -e "${GREEN}Connect your Dreamcast coders cable and enjoy netplay!${NC}"
 else
     echo -e "${YELLOW}⚠️  Service may have issues. Check logs with:${NC}"
     echo -e "   sudo journalctl -u $SERVICE_NAME -n 20"

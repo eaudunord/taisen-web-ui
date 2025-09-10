@@ -2,7 +2,11 @@ DISCLAIMER: THIS IS PARTIALLY AI WRITTEN. I HAVE REVIEWED, MODIFIED, AND ADDED T
 
 This is a simple Web UI for controlling the Taisen Netplay script on a DreamPi
 
-To install, place install.sh, index.html, uninstall.sh, and webserver.py in a folder on your Dreampi. Also get the latest link_cable.py script from https://github.com/eaudunord/dc-taisen-netplay
-Run `./install.sh` to begin the installation. The web UI can be reached at http://dreampi.local:1999
+To install:
+- Place install.sh in a folder on your DreamPi
+- Make it executable with the command `sudo chmod +x install.sh`
+- Use the command `./install.sh` to begin the installation. 
+
+The web UI can be reached at http://dreampi.local:1999
 
 ![Screenshot](https://github.com/eaudunord/taisen-web-ui/blob/main/Capture.PNG?raw=true)
