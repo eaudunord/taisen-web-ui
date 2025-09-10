@@ -167,8 +167,9 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(result).encode())
 
     def handle_dreampi_start(self):
+        global process_output
+        process_output = []
         try:
-            process_output = []
             start_dreampi = subprocess.check_output(["sudo", "service", "dreampi", "start"])
             result = subprocess.run(["systemctl", "is-active", "dreampi"], stdout=subprocess.DEVNULL)
             if result.returncode == 0:
@@ -192,8 +193,9 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(result).encode())
 
     def handle_dreampi_stop(self):
+        global process_output
+        process_output = []
         try:
-            process_output = []
             stop_dreampi = subprocess.check_output(["sudo", "service", "dreampi", "stop"])
             result = subprocess.run(["systemctl", "is-active", "dreampi"], stdout=subprocess.DEVNULL)
             if result.returncode != 0:
@@ -356,6 +358,7 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
 
     def fetch_updates(self):
         global process_output
+        process_output = []
         restart_flag = False
         link_script = "https://raw.githubusercontent.com/eaudunord/dc-taisen-netplay/main/link_cable.py"
         web_server = "https://raw.githubusercontent.com/eaudunord/taisen-web-ui/main/webserver.py"
@@ -413,6 +416,7 @@ if __name__ == "__main__":
     try:
         httpd = socketserver.TCPServer(("", PORT), LinkCableHandler)
         httpd.allow_reuse_port=True
+        httpd.allow_reuse_address=True
         print("DreamPi Link Cable Web Server Starting...")
         print("Access from any device: http://your-dreampi-ip:{}".format(PORT))
         print("Local access: http://localhost:{}".format(PORT))
