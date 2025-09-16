@@ -68,6 +68,11 @@ fi
 # Quick dependency installation (non-blocking)
 print_status "Installing dependencies..."
 
+if hostnamectl | grep 'stretch'; then
+    echo "Raspbian stretch detected. Try adding archive repos"
+    sudo sed -i 's/raspbian.raspberrypi.org/legacy.raspbian.org/g' /etc/apt/sources.list
+fi
+
 python -m pip --version || {
     sudo apt-get update
     sudo apt-get install -y python-pip
