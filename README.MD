@@ -7,6 +7,9 @@ To install:
 - Make it executable with the command `sudo chmod +x install.sh`
 - Use the command `./install.sh` to begin the installation. 
 
+An alternate automated installer for Windows users can be found here:
+https://github.com/likeagfeld/DreamPi-Link-Cable---Taisen-Netplay-Installer
+
 The web UI can be reached at http://dreampi.local:1999
 
 ![Screenshot](https://github.com/eaudunord/taisen-web-ui/blob/main/Capture.PNG?raw=true)
