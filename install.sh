@@ -88,6 +88,9 @@ python -c "import serial" >/dev/null 2>&1 || {
         python -m pip install pyserial
      } || print_warning "pyserial still failed - you may need to install manually later"
 
+# Make sure pyserial is up to date
+python -m pip install --upgrade pyserial
+
 # Try to install requests
 
     # for 2.7
