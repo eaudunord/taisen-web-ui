@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#web_server_version=2025.09.09.2338
+#web_server_version=2025.10.09.0900
 
 import sys
 import subprocess
@@ -10,6 +10,9 @@ import json
 import glob
 import io
 import requests
+from hashlib import sha256
+
+from uuid import getnode as get_mac
 
 if sys.version_info[0] >= 3:
     import http.server as httpserver
@@ -25,6 +28,8 @@ current_process = None
 process_output = []
 
 class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
+
+    stop_event = threading.Event()
     def do_GET(self):
         if self.path == '/' or self.path == '/index.html':
             self.send_response(200)
@@ -141,6 +146,14 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
             t = threading.Thread(target=capture_output)
             t.daemon = True
             t.start()
+
+            # Report to dcnow
+            self.stop_event.set() 
+            self.stop_event.clear()
+            game = config.get('game')
+            dcnow = threading.Thread(target=self.pseudo_dcnow, args=(game,) )
+            dcnow.daemon = True
+            dcnow.start()
             
             # Send success response
             self.send_response(200)
@@ -243,6 +256,7 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
     def handle_stop_request(self):
         global current_process
         stale_processes = None
+        self.stop_event.set()
         
         try:
             if current_process:
@@ -410,18 +424,68 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
         if restart_flag:
             subprocess.check_output(["sudo", "systemctl", "restart", "dreampi-linkcable"])
 
+    def pseudo_dcnow(self, game):
+        global process_output
+        API_ROOT = "https://dcnow-2016.appspot.com"
+        UPDATE_END_POINT = "/api/update/{mac_address}/"
+        UPDATE_INTERVAL = 15
+
+        if game == '1':
+            dnslookup = "aeroisd.dricas.com"
+        elif game == '2':
+            dnslookup = "aeroisd.dricas.com"
+        elif game == '3':
+            dnslookup = "f355.sega-rd2.com"
+        elif game == '4':
+            dnslookup = "tetris.dricas.com"
+        elif game == '5':
+            dnslookup = "virtualon.ddns.net"
+        elif game == '6':
+            dnslookup = "hellgate.ddns.net"
+        elif game == '9':
+            dnslookup = "maximumspeed.ddns.net"
+        else: 
+            dnslookup = None
+
+        # get mac address
+        mac = get_mac()
+        mac_address = sha256(":".join(("%012X" % mac)[i : i + 2] for i in range(0, 12, 2)).encode()
+        ).hexdigest()
+
+        # set post information
+        user_agent = "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT), Dreamcast Now"
+        header = {"User-Agent": user_agent}
+        data = {}
+        if dnslookup:
+            data["dns_query"] = sha256(dnslookup.encode()).hexdigest()
+        # process_output.append(dnslookup)
+        url = API_ROOT + UPDATE_END_POINT.format(mac_address=mac_address)
+
+        while not self.stop_event.is_set():
+            command = 'ps -ef | grep "link_cable.py" | grep -v grep'
+            process = subprocess.check_output(command, shell=True).decode()
+            if len(process) == 0 or process == '':
+                break
+            else:
+                try:
+                    requests.post(url,data=data,headers=header)
+                except:
+                    process_output.append("Couldn't update dcnow")
+            self.stop_event.wait(UPDATE_INTERVAL)
+        process_output.append("stopping dcnow")
+        return
+
+
 
 if __name__ == "__main__":
-
-    try:
-        httpd = socketserver.TCPServer(("", PORT), LinkCableHandler)
-        httpd.allow_reuse_port=True
-        httpd.allow_reuse_address=True
-        print("DreamPi Link Cable Web Server Starting...")
-        print("Access from any device: http://your-dreampi-ip:{}".format(PORT))
-        print("Local access: http://localhost:{}".format(PORT))
-        print("Press Ctrl+C to stop")
-        
+    httpd = socketserver.TCPServer(("", PORT), LinkCableHandler)
+    httpd.allow_reuse_port=True
+    httpd.allow_reuse_address=True
+    print("DreamPi Link Cable Web Server Starting...")
+    print("Access from any device: http://your-dreampi-ip:{}".format(PORT))
+    print("Local access: http://localhost:{}".format(PORT))
+    print("Press Ctrl+C to stop")
+    try:        
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\\nServer stopped")
