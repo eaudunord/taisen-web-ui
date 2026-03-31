@@ -81,6 +81,7 @@
                 <option value="5">Virtual On Oratorio Tangram</option>
                 <option value="6">Hell Gate</option>
                 <option value="9">Maximum Speed</option>
+				<option value="10">Local Read/Write Test</option>
             </select>
         </div>
         
@@ -122,6 +123,9 @@
         <div class="logs hidden" id="logsContainer">
             <div id="logs"></div>
         </div>
+		<div>
+            <button class="btn btn-primary" id="startBtn" onclick="testScript()">Test Link Cable</button>
+		</div>
     </div>
 
     <script>
@@ -206,6 +210,45 @@
                 .catch(function(error) {
                     updateStatus('Connection error: ' + error.message, 'error');
                 });
+        }
+
+        function testScript() {
+            var params = []
+            var com_port = document.getElementById('com_port').value;
+            // Validation
+            if (!com_port) {
+                alert('Please fill in all required fields:\\n\\n' +
+                      'COM Port: ' + (com_port || 'NOT SELECTED'));
+                return;
+            }
+            params.push('com_port=' + encodeURIComponent(com_port));
+            params.push('game=10');
+            params.push('matching=local');
+            var url = '/start?' + params.join('&');
+
+            fetch(url)
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (result.success) {
+                        isRunning = true;
+                        updateUI();
+                        updateStatus('Link cable active! Check logs for test status.', 'running');
+                        
+                        if (result.command) {
+                            document.getElementById('commandDisplay').innerHTML = 
+                                '<strong>Executed Command:</strong><br>' + result.command;
+                            document.getElementById('commandDisplay').classList.remove('hidden');
+                        }
+                        
+                        startLogUpdates();
+                    } else {
+                        updateStatus('Error: ' + result.error, 'error');
+                    }
+                })
+                .catch(function(error) {
+                    updateStatus('Connection error: ' + error.message, 'error');
+                });
+
         }
         
         function stopScript() {

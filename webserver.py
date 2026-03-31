@@ -80,7 +80,7 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
                 raise Exception("COM port not specified")
             if not config.get('game'):
                 raise Exception("Game not specified")
-            if not config.get('matching'):
+            if not config.get('matching') and config.get('game') != '10':
                 raise Exception("Connection method not specified")
             
             # Build command arguments
