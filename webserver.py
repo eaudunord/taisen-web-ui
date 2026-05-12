@@ -99,6 +99,8 @@ class LinkCableHandler(httpserver.SimpleHTTPRequestHandler):
                 args.append("address={}".format(config['ip_address']))
                 if config.get('connection_type') == '1':
                     args.append("state=waiting")
+                elif config.get('connection_type') == '3':
+                    args.append("state=flycast")
                 else:
                     args.append("state=calling")
             
